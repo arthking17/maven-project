@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Clone') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], 
+                extensions: [],
+                userRemoteConfigs:[[url: 'https://github.com/arthking17/maven-project.git',
+                credentialsId: 'my_profil']]
+                ])    
+            }
+        }
+        
+        stage('Compile') {
+            steps{
+                withMaven(maven: 'LOCAL_MAVEN') {
+                    // sh "mvn compile"
+                    bat "mvn compile"
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps{
+                withMaven(maven: 'LOCAL_MAVEN') {
+                    // sh "mvn compile"
+                    bat "mvn test"
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps{
+                // sh "mvn compile"
+                bat "mvn -B package -DSkipTests"
+            }
+        }
+        
+        stage('Build and Send results Sonar') {
+            steps{
+                withSonarQubeEnv(installationName: 'LOCAL_SONAR', credentialsId: 'GK_LAB_SONAR')
+                {
+                    // sh "mvn compile"
+                    bat "mvn -B -DSkipTests clean package sonar:sonar"
+                }
+            }
+        }
+    }
+}
